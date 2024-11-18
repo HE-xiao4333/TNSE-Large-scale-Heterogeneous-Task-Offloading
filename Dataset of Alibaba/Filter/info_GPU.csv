@@ -1,0 +1,4 @@
+sn,cpu_milli,memory_mib,gpu,model
+openb-node-0022,128000,786432,8,2
+openb-node-0023,96000,786432,8,3
+openb-node-0026,96000,393216,8,5
