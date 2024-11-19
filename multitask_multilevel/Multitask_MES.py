@@ -11,7 +11,7 @@ Result_path = config.get("Result_path")
 alpha = config.get("alpha")
 
 file_info = curPath + Datasets_path + "info_EU_" + "10" + "_5.csv"
-info = gv.info  # 读文件
+info = gv.info
 ES_wait_queue=gv.ES_wait_queue
 ES_First_level=gv.ES_First_level
 ES_Second_level=gv.ES_Second_level
