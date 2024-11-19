@@ -47,9 +47,9 @@ edge_position = config.get("Edge_position")
 speed = config.get("Speed")
 noisy = config.get("noisy")
 loss_exponent = 3
-light = 3 * 10 ** 8  # 光速
-Ad = 3  # 接收天线增益？
-fc = 915 * 10 ** 6  # 无线电波的载频。？
+light = 3 * 10 ** 8 
+Ad = 3  
+fc = 915 * 10 ** 6  
 K= 5
 
 
@@ -244,8 +244,8 @@ def update_ES_queue(i,task_information,optimal_RSU):
             for taskk in B:
                 index_all.append(rank.index(taskk[2]))
             candidi = 0
-            for ia in range(len(index_all)):  # 根据list的index
-                if index_all[ia] > index:  # 代表index_all[ia]在index后面
+            for ia in range(len(index_all)):
+                if index_all[ia] > index: 
                     pass
                 else:
                     candidi += 1
@@ -274,7 +274,6 @@ def critic(time,x_,y_,index_x,index_y,velocity):
         if i == time:
             for dev in range(config.get('Dev_dev')):
                 updage_offload_decision(i, x, y, dev)
-        # ④是进入计算队列还是卸载队列
         for dev in range(config.get('Dev_dev')):
             if len(task_queue[dev][i]) == 0:
                 continue
@@ -289,7 +288,7 @@ def critic(time,x_,y_,index_x,index_y,velocity):
                         info.loc[(info['name'] == sub_task[1]) & (info['name'].index == sub_task[0]), 'gpu_spec'] = gpu_spec
                 else:
                     if result['gpu_spec'].values[0] == -1:
-                        gpu_spec = sub_task[4]  # 随机取值的
+                        gpu_spec = sub_task[4]
                         info.loc[
                             (info['name'] == sub_task[1]) & (info['name'].index == sub_task[0]), 'gpu_spec'] = gpu_spec
                     else:
@@ -310,7 +309,7 @@ def critic(time,x_,y_,index_x,index_y,velocity):
             break
     return 0
 
-def update_tackel_queue(i):#把上一时隙没有处理完的任务队列，放入到新时隙里去
+def update_tackel_queue(i):
     if i == config.get('Time') + 700:
         return
     for dev in range(config.get('Dev_dev')):
