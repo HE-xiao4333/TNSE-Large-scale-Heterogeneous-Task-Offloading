@@ -151,7 +151,7 @@ def End_user_loop(i,loacl_in_time,offload_in_time,f_local,f_offload):
             break
     return any(not_same_tackel)
 
-def update_tackel_queue(i):#把上一时隙没有处理完的任务队列，放入到新时隙里去
+def update_tackel_queue(i):
     if i == config.get('Time') + 700:
         return
     for dev in range(config.get('Dev_dev')):
@@ -348,9 +348,9 @@ if __name__ == '__main__':
     speed = config.get("Speed")
     noisy = config.get("noisy")
     loss_exponent = 3
-    light = 3 * 10 ** 8  # 光速
-    Ad = 3  # 接收天线增益？
-    fc = 915 * 10 ** 6  # 无线电波的载频。？
+    light = 3 * 10 ** 8 
+    Ad = 3 
+    fc = 915 * 10 ** 6
     multi_user = multiagent(config.get('Dev_dev'),config.get('Dev_edge'),1+4+6,2,1+4+6,2,9,9+M)
     Guiyi = unit_all(26,6,70,6)
 
@@ -380,15 +380,15 @@ if __name__ == '__main__':
         pre_user=np.zeros((5, 1+1+4+3))
         value_all=[]
         for i in trange(config.get('Time') + 700):
-            h0 = np.zeros((config.get('Dev_dev'), config.get('Dev_edge')))  # 初始化的信道系数数组
+            h0 = np.zeros((config.get('Dev_dev'), config.get('Dev_edge')))
             dist_v = np.zeros((config.get('Dev_dev'),config.get('Dev_edge')))
             velocity = np.zeros((config.get('Dev_dev'), config.get('Dev_edge')))
             for dev in range(config.get('Dev_dev')):
                 for edge in range(config.get('Dev_edge')):
-                    #是VU和ES间的距离
+                   
                     dist_v[dev][edge] =math.sqrt((vehicle_position[dev][0] - edge_position[edge][0])**2+(vehicle_position[dev][1] - edge_position[edge][1])**2)
             dist_v_flatten =dist_v.flatten()
-            for j in range(config.get('Dev_dev')):  # 计算信道系数的公式为d*(light/4/math.pi/fc/dist_v[j])**(loss_exponent)
+            for j in range(config.get('Dev_dev')):  #d*(light/4/math.pi/fc/dist_v[j])**(loss_exponent)
                 for k in range(config.get('Dev_edge')):
                     h0[j][k] = Ad * (light / 4 / math.pi / fc / dist_v[j][k]) ** (loss_exponent)
             gen_task = TimeZone[i]
@@ -397,8 +397,8 @@ if __name__ == '__main__':
             for j in range(config.get('Dev_dev')):
                 for k in range(config.get('Dev_edge')):
                     velocity[j][k] = Band * math.log2(
-                        1 + ((h0[j][k] * config.get('P_tran_max')) / (10 ** ((noisy - 30) / 10))))  # 卸载速率
-            ### 进行任务处置
+                        1 + ((h0[j][k] * config.get('P_tran_max')) / (10 ** ((noisy - 30) / 10)))) 
+            ### 
             if i < config.get('Time'):
                 ####user decision
                 xz = []
@@ -482,7 +482,7 @@ if __name__ == '__main__':
                     updage_offload_decision(i, x, y, dev)
             f_offload = velocity  # f_offload
 
-            # ④是进入计算队列还是卸载队列
+            
             for dev in range(config.get('Dev_dev')):
                 if len(task_queue[dev][i]) == 0:
                     continue
@@ -497,7 +497,7 @@ if __name__ == '__main__':
                             info.loc[(info['name'] == sub_task[1]) & (info['name'].index == sub_task[0]), 'gpu_spec'] = gpu_spec
                     else:
                         if result['gpu_spec'].values[0] == -1:
-                            gpu_spec = sub_task[4]  # 随机取值的
+                            gpu_spec = sub_task[4]
                             info.loc[(info['name'] == sub_task[1]) & (info['name'].index == sub_task[0]), 'gpu_spec'] = gpu_spec
                         else:
                             gpu_spec = int(result['gpu_spec'].values[0])
