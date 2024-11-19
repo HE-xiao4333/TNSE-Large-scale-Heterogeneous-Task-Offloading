@@ -15,25 +15,21 @@ Result_path = config.get("Result_path")
 class LSTM_Cell(nn.Module):
     def __init__(self, in_dim , hidden_dim):
         super(LSTM_Cell,self).__init__()
-        self.ix_linear = nn.Linear(in_dim,hidden_dim)#这回的
-        self.ih_linear = nn.Linear(hidden_dim,hidden_dim)#上回的
+        self.ix_linear = nn.Linear(in_dim,hidden_dim)
+        self.ih_linear = nn.Linear(hidden_dim,hidden_dim)
         self.fx_linear = nn.Linear(in_dim, hidden_dim)
         self.fh_linear = nn.Linear(hidden_dim, hidden_dim)
         self.ox_linear = nn.Linear(in_dim, hidden_dim)
         self.oh_linear = nn.Linear(hidden_dim, hidden_dim)
-        self.cx_linear = nn.Linear(in_dim, hidden_dim)#中间状态
+        self.cx_linear = nn.Linear(in_dim, hidden_dim)
         self.ch_linear = nn.Linear(hidden_dim, hidden_dim)
-    def forward(self,x , h_1,c_1): #前向传播
-        #这是三个遗忘门
+    def forward(self,x , h_1,c_1):
         i = torch.sigmoid(self.ix_linear(x)+self.ih_linear(h_1))
         f = torch.sigmoid(self.fx_linear(x)+self.fh_linear(h_1))
         o = torch.sigmoid(self.ox_linear(x) + self.oh_linear(h_1))
-        # 计算候选C，相当于输入z
         c_ = torch.tanh(self.cx_linear(x) + self.ch_linear(h_1))
-        # 更新记忆单元和隐藏状态
-        c = i * c_ + f *c_1#当前C
-        h = o * torch.tanh(c) #输出，并且是下一个的h_1
-        # 对输出进行sigmoid激活
+        c = i * c_ + f *c_1
+        h = o * torch.tanh(c) 
         h = torch.sigmoid(h)
         return  h , c
 
@@ -42,21 +38,20 @@ class LSTM(nn.Module):
         super(LSTM,self).__init__()
         self.hidden_dim =hidden_dim
         self.lstm_cell = LSTM_Cell(in_dim , hidden_dim)
-    def forward(self,x):#传进来一个序列的张量
+    def forward(self,x):
         '''
         x = [seq_lens, batch_size, in_dim]
-        序列张量长度，批处理量，超参 这些是维度，也就代表有一个长为seq_lens的字符串，每个字符串有batch_size个大小为in_dim的向量
         '''
         outs=[]
         h,c =None,None
         for seq_x in x:
             #seq_x : [batch,in_dim]
-            if h is None: h = torch.randn(1,self.hidden_dim)#in_dim，开始时随机生成in_dim*hidden_dim的输入h0
+            if h is None: h = torch.randn(1,self.hidden_dim)
             if c is None: c = torch.randn(1,self.hidden_dim)
             h,c = self.lstm_cell(seq_x,h,c)
             outs.append(torch.unsqueeze(h,0))
         outs = torch.cat(outs)
-        return outs,h #输出+中间状态
+        return outs,h
 
 class Actor(nn.Module):
     def __init__(self,state_dim,action_dim):
@@ -78,7 +73,7 @@ class Actor(nn.Module):
     def forward(self,h):
         if torch.cuda.is_available():
             h = h.to("cuda")
-        m_pred = self.model(h)  # 输入h得到预测结果m_pred
+        m_pred = self.model(h)
         #m_pred = m_pred.detach().numpy()
         return m_pred
 class Critic(nn.Module):
@@ -93,7 +88,7 @@ class Critic(nn.Module):
         self.critic_RSU = self._build_net(self.state_dim_RSU)
         self.optimizer_RSU = optim.Adam(self.critic_RSU.parameters(), lr=self.learning_rate, betas=(0.09, 0.999),
                                    weight_decay=0.0001)
-        self.memory_RSU = np.zeros((self.memory_size, state_dim_RSU + 1))  # state_dim,真实值
+        self.memory_RSU = np.zeros((self.memory_size, state_dim_RSU + 1))
         self.memory_RSU_counter = 0
         self.cost_RSU = []
         self.Critic_VE=[]
@@ -139,7 +134,7 @@ class Critic(nn.Module):
         reward =reward.detach().numpy()
         return reward
 
-    def decode_VE(self,dev,h):#未改
+    def decode_VE(self,dev,h):
         h = torch.FloatTensor(h)
         if torch.cuda.is_available():
             h = h.to("cuda")
@@ -150,7 +145,7 @@ class Critic(nn.Module):
         reward =reward.detach().numpy()
         return reward
 
-    def remember_RSU(self,h,m,r):#state+action
+    def remember_RSU(self,h,m,r):
         idx = self.memory_RSU_counter % self.memory_size
         self.memory_RSU[int(idx), :] = np.hstack((h, m, r))
         self.memory_RSU_counter += 1
@@ -228,10 +223,10 @@ class Critic(nn.Module):
 class multiagent(object):
     def __init__(self,vehicle_number,RSU_number,state_dim_RSU,action_dim_RSU,state_dim_ve,action_dim_ve,LSTM_ve,LSTM_RSU,learning_rate=0.001, training_interval=5, batch_size=64,memory_size=10000):
         super(multiagent, self).__init__()
-        self.vehicle = vehicle_number#智能体的个数
+        self.vehicle = vehicle_number
         self.state_dim_ve = state_dim_ve#1+4+10+(2+2*3+1+3)+(1+1+2*3+3*3)+(1+1+4+2+3)
         self.action_dim_ve = action_dim_ve#2
-        self.RSU = RSU_number#1，只有一个cloud综合分配算法
+        self.RSU = RSU_number
         self.state_dim_RSU = state_dim_RSU#1+(2+1+1)+(1+2+3+4)+MES*(1+1+3*2)+
         self.action_dim_RSU = action_dim_RSU#1+1
         self.LSTM_ve = LSTM_ve
@@ -241,14 +236,14 @@ class multiagent(object):
         self.lr = learning_rate
         self.batch_size = batch_size
         # reply buffer
-        self.memory_ve= np.zeros((self.memory_size, state_dim_ve + action_dim_ve + 1))#输入、输出、第几个dev、reward、总reward
+        self.memory_ve= np.zeros((self.memory_size, state_dim_ve + action_dim_ve + 1))
         self.point_ve = 0
-        self.memory_RSU = np.zeros((self.memory_size, state_dim_RSU + action_dim_RSU))  # 可能需要改
+        self.memory_RSU = np.zeros((self.memory_size, state_dim_RSU + action_dim_RSU))
         self.point_RSU = 0
         # 初始化LSTM
         self.LSTM_L = LSTM(LSTM_ve, LSTM_ve)  # lastest 5 second information --->input: output:5*1*(1+1+4+3+2)11
         self.optimizer_L = torch.optim.Adam(self.LSTM_L.parameters(), lr=0.001, betas=(0.09, 0.999),weight_decay=0.0001)
-        #self.memory_LSTM_L = np.zeros((5, LSTM_ve))#通过近5秒的数据进行预测，然后再将预测值与真实值进行对比
+        #self.memory_LSTM_L = np.zeros((5, LSTM_ve))
         # 初始化Actor
         self.Actor_ve = []
         self.Actor_ve_target = []
@@ -266,14 +261,14 @@ class multiagent(object):
             self.copt_2.append(copt_target)
             self.cost_ve.append([])
 
-        # 定义优化器
+        
         self.Actor_RSU = Actor(state_dim_RSU, action_dim_RSU)
         self.Actor_RSU_target = Actor(state_dim_RSU, action_dim_RSU)
         self.aopt = torch.optim.Adam(self.Actor_RSU.parameters(), lr=0.001, betas=(0.09, 0.999), weight_decay=0.0001)
         self.aopt_target = torch.optim.Adam(self.Actor_RSU_target.parameters(), lr=0.001, betas=(0.09, 0.999), weight_decay=0.0001)
         self.cost_RSU=[]
 
-        # 损失函数
+        
         self.mes_loss = nn.MSELoss()
         self.update_Actor = 0
     def predict_L(self,memory_LSTM_L):
@@ -324,7 +319,7 @@ class multiagent(object):
         action = action.detach().numpy()
         action_all.append(action.tolist())
         action_target = self.reverse(action,time)
-        return action_target #返回的是一个任务在MES的处理决策
+        return action_target
 
     def choose_action_Vehicle(self, j,s, time):
         s = torch.FloatTensor(s)
@@ -412,7 +407,7 @@ class multiagent(object):
         if k > 0:
             for i in range(k):
                 c = []
-                # 产生随机数
+                
                 nu = np.random.uniform(-0.25, 0.25)
                 for j in range(len(m)):
                     if (m[j] + nu < 0):
