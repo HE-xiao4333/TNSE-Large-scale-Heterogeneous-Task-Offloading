@@ -41,10 +41,10 @@ def append_First_level(time,gen_task):
         ES_First_level[es_select][int(result['gpu_spec'].values[0])][time].append(task)
 
 
-def judge_waittask_is_availble(time,es,t,type_,i,Queue_ES=ES_wait_queue):#当前的第i个是否可行
+def judge_waittask_is_availble(time,es,t,type_,i,Queue_ES=ES_wait_queue):
     if not Queue_ES[es][time]:
         return [-1,-1]
-    if i >= len(Queue_ES[es][time]):#没有合适的意思
+    if i >= len(Queue_ES[es][time]):
         return [-1,-1]
     task_id = Queue_ES[es][time][i]
     result = info.loc[(info['name'] ==task_id[1]) & (info['name'].index == task_id[0]) & (info['gpu_spec'] == type_)]
@@ -52,9 +52,9 @@ def judge_waittask_is_availble(time,es,t,type_,i,Queue_ES=ES_wait_queue):#当前
     if result.empty:
         return [-1,-1]
 
-    if result['off_end'].values[0] > t:  # 如果这个任务完成了，但是完成的时间比当前时间晚，那么在t时，它应该是没有完成的
+    if result['off_end'].values[0] > t:
         judge = 0
-    else:  # 首先保证end应该<t，如果在这个基础上，前置任务还是完成的话，那么可以让这个任务进行处理
+    else:
         judge = result['offload_success'].values[0]
     k[0] = judge
     # judge the task is or not affloaded complete
@@ -65,15 +65,15 @@ def judge_waittask_is_availble(time,es,t,type_,i,Queue_ES=ES_wait_queue):#当前
             k[1] = 1
     return k
 
-def judge_task_is_availble(time,es,t,type,Queue_ES=ES_First_level):#t呢就表示，在第i个时隙，当前时间t能不能还存在前置任务完成的任务
+def judge_task_is_availble(time,es,t,type,Queue_ES=ES_First_level):
     k,t__ = [0, 0],t
     if not Queue_ES[es][type][time]:
          return -1,t
     task_id = Queue_ES[es][type][time][0]
     result = info.loc[(info['name'] == task_id[1])& (info['name'].index == task_id[0])]
-    if result['off_end'].values[0] > t:  # 如果这个任务完成了，但是完成的时间比当前时间晚，那么在t时，它应该是没有完成的
+    if result['off_end'].values[0] > t:
         judge=0
-    else:  # 首先保证end应该<t，如果在这个基础上，前置任务还是完成的话，那么可以让这个任务进行处理
+    else:
         judge=result['offload_success'].values[0]
     k[0] = judge
     #judge the task is or not affloaded complete
@@ -88,11 +88,11 @@ def judge_task_is_availble(time,es,t,type,Queue_ES=ES_First_level):#t呢就表�
                 t__ = result['off_end'].values[0]
     return k,t__
 
-def off_task_tackel_Fir(time, es, t,type_):  # 系统时间，第几个es，和first queue 时间
+def off_task_tackel_Fir(time, es, t,type_):
     k, i = [0, 0], 0
     while np.any(np.array(k) != 1):
         if len(ES_wait_queue[es][time]) != 0:
-            k = judge_waittask_is_availble(time, es, t, type_, i)  # 寻找type类型的任务是否存在
+            k = judge_waittask_is_availble(time, es, t, type_, i)
             if (k == [-1, -1]):
                 break
             i = i + 1
@@ -100,7 +100,7 @@ def off_task_tackel_Fir(time, es, t,type_):  # 系统时间，第几个es，和f
             break
     if t - time >= 1:
         return time+1  # 'time out'
-    if np.all(np.array(k) == 1):  # 插入到队首,把这个从等待队列中去掉
+    if np.all(np.array(k) == 1):
         ES_First_level[es][type_][time].insert(0, ES_wait_queue[es][time][i - 1])
         ES_wait_queue[es][time].remove(ES_wait_queue[es][time][i - 1])
     if not ES_First_level[es][type_][time]:
@@ -108,8 +108,7 @@ def off_task_tackel_Fir(time, es, t,type_):  # 系统时间，第几个es，和f
 
     K, t = judge_task_is_availble(time, es, t, type_,ES_First_level)
 
-    if np.all(np.array(K) == 1):  # 可能= -1，【0/1，0/1】
-        # 如果可行，进入下边
+    if np.all(np.array(K) == 1):
         task = ES_First_level[es][type_][time][0]
         result = info.loc[(info['name'] == task[1])& (info['name'].index == task[0])]
         task_need_cpu = result['cpu_milli'].values[0] - result['complete_size_cpu'].values[0]
@@ -128,7 +127,7 @@ def off_task_tackel_Fir(time, es, t,type_):  # 系统时间，第几个es，和f
         if (result['complete_size_cpu'].values[0] == 0) & (result['complete_size_gpu'].values[0] == 0):
             info.loc[(info['name'] == task[1]) & (info['name'].index == task[0]), 'start'] = t
 
-        if task_need_cpu <= F_tack[0]:  # 能够在第1个队列中结束
+        if task_need_cpu <= F_tack[0]:
             info.loc[(info['name'] == task[1]) & (info['name'].index == task[0]), 'complete_size_cpu'] = result['complete_size_cpu'].values[0] + task_need_cpu
             info.loc[(info['name'] == task[1]) & (info['name'].index == task[0]), 'complete_cpu'] = 1
             use_time = task_need_cpu / ES_cycle[type_][0][0]
@@ -194,7 +193,7 @@ def off_task_tackel_Sec(time, es, t,type_):
             if (run < time_slot[1]):
                 F_tack = np.multiply((time_slot[1] - run), ES_cycle[type_][1])
         else:
-            F_tack = np.multiply((1 - (t - time)), ES_cycle[type_][1])  # 这个时候，第1个时隙中剩余的时间应该<0.2了
+            F_tack = np.multiply((1 - (t - time)), ES_cycle[type_][1])
             if (run < time_slot[1]):
                 if (time_slot[1] - run) <= (1 - (t - time)):
                     F_tack = np.multiply((time_slot[1] - run), ES_cycle[type_][1])
@@ -267,10 +266,10 @@ def off_task_tackel_Tir(time, es, t,type_):
             t = result['end'].values[0]
         if t - time <= (1 - time_slot[2]):
             F_tack = F_cycle_use[type_][2]
-            if (run < time_slot[2]):  # 0924改
+            if (run < time_slot[2]):
                 F_tack = np.multiply((time_slot[2] - run), ES_cycle[type_][2])
         else:
-            F_tack = np.multiply((1 - (t - time)), ES_cycle[type_][2])  # 这个时候，第1个时隙中剩余的时间应该<0.2了
+            F_tack = np.multiply((1 - (t - time)), ES_cycle[type_][2])
             if (run < time_slot[2]):
                 if (time_slot[2] - run) <= (1 - (t - time)):
                     F_tack = np.multiply((time_slot[2] - run), ES_cycle[type_][2])
@@ -356,10 +355,8 @@ def ES_Queue_update(time):
         wait_size_ES[dev][time+1]=wait_size_ES[dev][time]+wait_size_ES[dev][time+1]
 
 def MES_task_tackel(i):
-    #① 将任务信息和任务数据卸载到ES端，其中，任务信息卸载不占用时间，
     gen_task = TimeZone[i]#保存的是id号
     gen_task = get_all_subtask(i, gen_task)
-    # ② 就是将每个时隙内的任务信息首先依次输入到First_level_queue中，因为排队处理嘛，有信息就可以排队了
     append_First_level(i, gen_task)
     t = [[i, i, i] for _ in range(config.get('Dev_edge'))]
     t_2 = [[i, i, i] for _ in range(config.get('Dev_edge'))]
@@ -378,12 +375,9 @@ def MES_task_tackel(i):
                 t_3[dev][type] = i
             elif ES_Third_level[dev][type][i][0][3] > i:
                 t_3[dev][type] = ES_Third_level[dev][type][i][0][3]
-
-    # ③ 每个时隙对队首的任务进行判断，如果任务尚未传输完毕/任务的前置任务没有完成，则让任务进入等待队列进行等待
     First_time, Second_time, Third_time = np.zeros((config.get('Dev_edge'), 3)), np.zeros(
         (config.get('Dev_edge'), 3)), np.zeros((config.get('Dev_edge'), 3))
     for dev in range(config.get('Dev_edge')):
-        # 用于得到每个列表的起始时间
         for type in range(3):
             First_time[dev][type] = off_task_tackel_Fir(i, dev, t[dev][type], type)
             Second_time[dev][type] = off_task_tackel_Sec(i, dev, First_time[dev][type], type)
