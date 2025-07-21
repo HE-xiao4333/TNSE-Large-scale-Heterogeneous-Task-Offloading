@@ -10,4 +10,4 @@ dataset please cite : @inproceedings{FGD2023,
     publisher = {{USENIX} Association}
 }
 
-Our paper aren't acc....     if acc, please cite  *****
+Only the model structure code is disclosed. The core algorithm part is not disclosed for the time being because it involves subsequent work and intellectual property rights. Please understand.
